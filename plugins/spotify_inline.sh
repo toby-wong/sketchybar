@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# osascript 'tell application "Spotify"' relaunches the app if it's not
+# running, so bail out first to let the user actually quit Spotify.
+if ! pgrep -xq "Spotify"; then
+  sketchybar --set spotify.inline drawing=off
+  exit 0
+fi
+
 PLAYING=$(osascript -e 'tell application "Spotify" to get player state' 2>/dev/null)
 
 if [ "$PLAYING" = "playing" ]; then

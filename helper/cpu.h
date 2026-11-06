@@ -3,10 +3,7 @@
 #include <unistd.h>
 #include <mach/mach.h>
 #include <stdbool.h>
-#include <time.h>
-
-static const char TOPPROC[32] = { "/bin/ps -Aceo pid,pcpu,comm -r" }; 
-static const char FILTER_PATTERN[16] = { "com.apple." };
+#include <string.h>
 
 struct cpu {
   host_t host;
@@ -14,7 +11,8 @@ struct cpu {
   host_cpu_load_info_data_t load;
   host_cpu_load_info_data_t prev_load;
   bool has_prev_load;
-
+  uint32_t tick;
+  char topproc[32];
   char command[256];
 };
 
@@ -22,6 +20,8 @@ static inline void cpu_init(struct cpu* cpu) {
   cpu->host = mach_host_self();
   cpu->count = HOST_CPU_LOAD_INFO_COUNT;
   cpu->has_prev_load = false;
+  cpu->tick = 0;
+  snprintf(cpu->topproc, 32, "?");
   snprintf(cpu->command, 100, "");
 }
 
@@ -46,49 +46,40 @@ static inline void cpu_update(struct cpu* cpu) {
     uint32_t delta_idle = cpu->load.cpu_ticks[CPU_STATE_IDLE]
                           - cpu->prev_load.cpu_ticks[CPU_STATE_IDLE];
 
-    double user_perc = (double)delta_user / (double)(delta_system
-                                                     + delta_user
-                                                     + delta_idle);
+    uint32_t delta_nice = cpu->load.cpu_ticks[CPU_STATE_NICE]
+                          - cpu->prev_load.cpu_ticks[CPU_STATE_NICE];
 
-    double sys_perc = (double)delta_system / (double)(delta_system
-                                                      + delta_user
-                                                      + delta_idle);
+    double total = (double)(delta_user + delta_system + delta_idle + delta_nice);
+    if (total <= 0) total = 1;
 
+    double user_perc = (double)(delta_user + delta_nice) / total;
+    double sys_perc = (double)delta_system / total;
     double total_perc = user_perc + sys_perc;
 
-    FILE* file;
-    char line[1024];
-
-    file = popen(TOPPROC, "r");
-    if (!file) {
-      printf("Error: TOPPROC command errored out...\n" );
-      return;
-    }
-
-    fgets(line, sizeof(line), file);
-    fgets(line, sizeof(line), file);
-
-    char* start = strstr(line, FILTER_PATTERN);
-    char topproc[32];
-    uint32_t caret = 0;
-    for (int i = 0; i < sizeof(line); i++) {
-      if (start && i == start - line) {
-        i+=9;
-        continue;
+    // Update top process only every 10 ticks (~20s)
+    if (cpu->tick % 10 == 0) {
+      FILE* file = popen("/bin/ps -Aceo pcpu,comm -r", "r");
+      if (file) {
+        char line[256];
+        fgets(line, sizeof(line), file); // skip header
+        if (fgets(line, sizeof(line), file)) {
+          // Find process name after the CPU% field
+          char* p = line;
+          while (*p == ' ') p++;
+          while (*p && *p != ' ') p++; // skip cpu%
+          while (*p == ' ') p++;
+          // Strip com.apple. prefix
+          char* apple = strstr(p, "com.apple.");
+          if (apple) p = apple + 10;
+          // Trim newline and truncate
+          char* nl = strchr(p, '\n');
+          if (nl) *nl = '\0';
+          snprintf(cpu->topproc, 32, "%s", p);
+        }
+        pclose(file);
       }
-
-      if (caret >= 28 && caret <= 30) {
-        topproc[caret++] = '.';
-        continue;
-      }
-      if (caret > 30) break;
-      topproc[caret++] = line[i];
-      if (line[i] == '\0') break;
     }
-
-    topproc[31] = '\0';
-
-    pclose(file);
+    cpu->tick++;
 
     char color[16];
     if (total_perc >= .7) {
@@ -109,7 +100,7 @@ static inline void cpu_update(struct cpu* cpu) {
                                 user_perc,
                                 total_perc*100.,
                                 color,
-                                topproc                                         );
+                                cpu->topproc                                    );
   }
   else {
     snprintf(cpu->command, 256, "");

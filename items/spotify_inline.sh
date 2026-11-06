@@ -5,6 +5,7 @@ spotify_inline=(
   label.font="$FONT:Regular:12.0"
   label.max_chars=50
   update_freq=1
+  updates=on
   position=right
 )
 

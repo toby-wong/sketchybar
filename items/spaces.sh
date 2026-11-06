@@ -75,6 +75,7 @@ separator=(
   label.drawing=off
   # associated_display=active
   click_script="/Users/tobywo/.config/sketchybar/items/spaces.sh toggle"
+  script="$PLUGIN_DIR/display_change.sh"
   icon.color=$WHITE
 )
 
@@ -82,4 +83,10 @@ sketchybar --add bracket spaces '/space\..*/' \
            --set spaces "${spaces[@]}"        \
                                               \
            --add item separator left          \
-           --set separator "${separator[@]}"
+           --set separator "${separator[@]}"  \
+           --subscribe separator display_change
+
+# Apply the correct expanded/collapsed state once at boot. Thereafter the
+# separator's `display_change` subscription (see above) re-runs this same
+# handler automatically whenever a monitor is connected or disconnected.
+"$PLUGIN_DIR/display_change.sh"

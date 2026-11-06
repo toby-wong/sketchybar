@@ -64,8 +64,13 @@ sketchybar --default "${defaults[@]}"
 
 # Left
 source "$ITEM_DIR/apple.sh"
-source "$ITEM_DIR/spaces.sh"
-source "$ITEM_DIR/front_app.sh"
+# Window manager items: AeroSpace when it is running, else yabai (see wm-switch)
+if pgrep -x AeroSpace >/dev/null; then
+  source "$ITEM_DIR/aerospace.sh"
+else
+  source "$ITEM_DIR/spaces.sh"
+  source "$ITEM_DIR/front_app.sh"
+fi
 
 # Center
 # source "$ITEM_DIR/spotify.sh"
@@ -75,8 +80,10 @@ source "$ITEM_DIR/calendar.sh"
 # source "$ITEM_DIR/brew.sh"
 # source "$ITEM_DIR/github.sh"
 source "$ITEM_DIR/battery.sh"
-source "$ITEM_DIR/volume.sh"
+#source "$ITEM_DIR/volume.sh"
 source "$ITEM_DIR/cpu.sh"
+source "$ITEM_DIR/memory.sh"
+source "$ITEM_DIR/acme.sh"
 source "$ITEM_DIR/spotify_inline.sh"
 
 # Forcing all item scripts to run (never do this outside of sketchybarrc)

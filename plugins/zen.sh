@@ -6,6 +6,7 @@ zen_on() {
              --set '/cpu.*/' drawing=off \
              --set calendar icon.drawing=off \
              --set yabai drawing=off \
+             --set aerospace drawing=off \
              --set separator drawing=off \
              --set front_app drawing=off \
              --set volume_icon drawing=off \
@@ -24,6 +25,7 @@ zen_off() {
              --set separator drawing=on \
              --set front_app drawing=on \
              --set yabai drawing=on \
+             --set aerospace drawing=on \
              --set volume_icon drawing=on \
              --set spotify.play updates=on \
              --set spotify.inline drawing=on \

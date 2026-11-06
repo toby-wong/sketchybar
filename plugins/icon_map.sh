@@ -1,4 +1,7 @@
 case $@ in
+"MeshClaw" | "MeshClaw Beta")
+  icon_result=":meshclaw:"
+  ;;
 "Arc")
   icon_result=":arc:"
   ;;

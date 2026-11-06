@@ -50,7 +50,7 @@ windows_on_spaces () {
       CURRENT_STATE=$(sketchybar --query space.$space | jq -r '.label.drawing')
       
       icon_strip=" "
-      apps=$(yabai -m query --windows --space $space | jq -r ".[].app")
+      apps=$(yabai -m query --windows --space $space | jq -r ".[].app" | grep -v "^zoom.us$" | awk '!seen[$0]++')
       if [ "$apps" != "" ]; then
         while IFS= read -r app; do
           icon_strip+=" $($HOME/.config/sketchybar/plugins/icon_map.sh "$app")"

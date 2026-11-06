@@ -41,6 +41,13 @@ shuffle ()
 
 update ()
 {
+  # Don't poll via osascript when Spotify isn't running -- 'tell application'
+  # relaunches the app, preventing the user from quitting it.
+  if ! pgrep -xq "Spotify"; then
+    sketchybar --set spotify.anchor drawing=off popup.drawing=off
+    return
+  fi
+
   PLAYING=$(osascript -e 'tell application "Spotify" to get player state' 2>/dev/null)
 
 
